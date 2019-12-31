@@ -1,13 +1,15 @@
 import React, { Component } from "react";
-import { Segment, Item, Icon, List, Button } from "semantic-ui-react";
+import { Segment, Item, Icon, List, Button, Label } from "semantic-ui-react";
 import EventListAttendee from "./EventListAttendee";
 import { Link } from "react-router-dom";
-import { format, getTime } from "date-fns";
+import { format } from "date-fns";
+import { objectToArray } from "../../../app/common/util/helpers";
 
 class EventListItem extends Component {
   render() {
-    const { fromEventList, deleteEvent } = this.props;
+    const { fromEventList } = this.props;
     console.log("eventListItemDate", fromEventList.eventDate);
+    console.log("pisspropEvent", fromEventList);
 
     return (
       <Segment.Group>
@@ -16,8 +18,23 @@ class EventListItem extends Component {
             <Item>
               <Item.Image size="tiny" circular src={fromEventList.hostPhotoURL} />
               <Item.Content>
-                <Item.Header>{fromEventList.title}</Item.Header>
-                <Item.Description>Hosted by {fromEventList.host}</Item.Description>
+                <Item.Header as={Link} to={`/events/${fromEventList.id}`}>
+                  {fromEventList.title}
+                </Item.Header>
+                <Item.Description>
+                  Hosted by{" "}
+                  <Link to={`/profile/${fromEventList.hostUid}`}>
+                    {fromEventList.hostedBy}
+                  </Link>
+                </Item.Description>
+                {fromEventList.cancelled && (
+                  <Label
+                    style={{ top: "-40px" }}
+                    ribbon="right"
+                    color="red"
+                    content="This event has been cancelled"
+                  />
+                )}
               </Item.Content>
             </Item>
           </Item.Group>
@@ -41,20 +58,13 @@ class EventListItem extends Component {
         <Segment secondary>
           <List horizontal>
             {fromEventList.attendees &&
-              Object.values(fromEventList.attendees).map((a, index) => (
-                <EventListAttendee key={index} attendee={a} />
+              objectToArray(fromEventList.attendees).map(a => (
+                <EventListAttendee key={a.id} attendee={a} />
               ))}
           </List>
         </Segment>
         <Segment clearing>
           <span>{fromEventList.desc}</span>
-          <Button
-            onClick={e => deleteEvent(fromEventList.id)}
-            as="a"
-            color="red"
-            floated="right"
-            content="DeleteP"
-          />
 
           <Button
             as={Link}

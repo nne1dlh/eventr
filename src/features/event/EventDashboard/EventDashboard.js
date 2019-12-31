@@ -1,27 +1,79 @@
 import React, { Component } from "react";
-import { Grid } from "semantic-ui-react";
-import { connect } from "react-redux"; //hoc to connect to store
+import { Grid, Loader } from "semantic-ui-react";
+import { connect } from "react-redux";
+import { firestoreConnect } from "react-redux-firebase";
 import EventList from "../eventList/EventList";
-import { createEvent, updateEvent, deleteEvent } from "../eventActions";
+import { getEventsForDashboard } from "../eventActions";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import EventActivity from "../EventActivity/EventActivity";
-import { firestoreConnect } from "react-redux-firebase";
 
 class EventDashboard extends Component {
-  handleDeleteEvent = id => {
-    this.props.deleteEvent(id);
+  state = {
+    moreEvents: false,
+    loadingInit: true,
+    loadedEvents: []
+  };
+
+  async componentDidMount() {
+    let next = await this.props.getEventsForDashboard();
+    console.log("next", next);
+
+    if (next && next.docs.length > 1) {
+      this.setState({
+        moreEvents: true,
+        loadingInit: false
+      });
+    }
+  }
+
+  getNextEvent = async () => {
+    const { events } = this.props;
+    let lastEvent = events && events[events.length - 1];
+    console.log("last", lastEvent);
+    let next = await this.props.getEventsForDashboard(lastEvent);
+    console.log("next", next);
+    if (next && next.docs && next.docs.length <= 1) {
+      this.setState({
+        moreEvents: false
+      });
+    }
+  };
+
+  componentDidUpdate = prevProps => {
+    if (this.props.events !== prevProps.events) {
+      this.setState({
+        loadedEvents: [...this.state.loadedEvents, ...this.props.events]
+      });
+    }
   };
 
   render() {
     const { events, loading } = this.props;
-    if (loading) return <LoadingComponent />;
+    const { moreEvents, loadedEvents } = this.state;
+    if (this.state.loadingInit) return <LoadingComponent />;
     return (
       <Grid>
         <Grid.Column width={10}>
-          <EventList events={events} deleteEvent={this.handleDeleteEvent} />
+          <EventList
+            events={loadedEvents}
+            loading={loading}
+            moreEvents={moreEvents}
+            getNextEvent={this.getNextEvent}
+          />
+          {/* <Button
+            loading={loading}
+            content="More"
+            color="green"
+            floated="right"
+            onClick={this.getNextEvent}
+            disabled={!this.state.moreEvents}
+          /> */}
         </Grid.Column>
         <Grid.Column width={6}>
           <EventActivity />
+        </Grid.Column>
+        <Grid.Column width={10}>
+          <Loader active={loading} />
         </Grid.Column>
       </Grid>
     );
@@ -29,15 +81,14 @@ class EventDashboard extends Component {
 }
 
 const mapStateToProps = state => ({
-  events: state.firestore.ordered.events,
+  events: state.events,
   loading: state.asyncP.loading
+  //loading: state.asyncP.loading
 });
 
 const mapDispatchToProps = {
   //access to actions avail from props inside evtdashboard
-  createEvent,
-  deleteEvent,
-  updateEvent
+  getEventsForDashboard
 };
 
 export default connect(

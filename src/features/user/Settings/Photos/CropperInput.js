@@ -2,8 +2,6 @@ import React, { Component, createRef } from "react";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
 
-const cropper = React.createRef(null);
-
 class CropperInput extends Component {
   cropper = createRef();
   cropImg = () => {

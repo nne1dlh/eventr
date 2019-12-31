@@ -23,8 +23,8 @@ class Navbar extends Component {
   render() {
     const { auth, profile } = this.props;
     const piss = auth.isLoaded && !auth.isEmpty;
-    console.log("profile from navbar", profile);
-    console.log("auth from navbar", auth);
+    //console.log("profile from navbar", profile);
+    //console.log("auth from navbar", auth);
     return (
       <Menu inverted fixed="top">
         <Container>

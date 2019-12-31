@@ -2,47 +2,94 @@ import React, { Component } from "react";
 import { connect } from "react-redux";
 import { compose } from "redux";
 import { Grid } from "semantic-ui-react";
-import { firestoreConnect } from "react-redux-firebase";
+import { firestoreConnect, isEmpty } from "react-redux-firebase";
 import UserDetailedDescription from "./UserDetailedDescription";
 import UserDetailedEvents from "./UserDetailedEvents";
 import UserDetailedHeader from "./UserDetailedHeader";
 import UserDetailedPhotos from "./UserDetailedPhotos";
 import UserDetailedSidebar from "./UserDetailedSidebar";
-
-const query = ({ auth }) => {
-  return [
-    {
-      collection: "users",
-      doc: auth.uid,
-      subcollections: [{ collection: "photos" }],
-      storeAs: "photos"
-    }
-  ];
-};
+import { userDetailedQuery } from "../../user/userQueries";
+import LoadingComponent from "../../../app/layout/LoadingComponent";
+import { getUserEvents } from "../userActions";
 
 class UserDetailedPage extends Component {
+  async componentDidMount() {
+    let events = await this.props.getUserEvents(this.props.userUid);
+    console.log("events", events);
+  }
+
+  changeTab = (e, data) => {
+    console.log("ChangeTabby", data);
+    this.props.getUserEvents(this.props.userUid, data.activeIndex);
+  };
+
   render() {
-    const { profile, photos } = this.props;
+    const {
+      profile,
+      photos,
+      auth,
+      match,
+      requesting,
+      events,
+      eventsLoading
+    } = this.props;
+    const isCurrentUser = auth.uid === match.params.id;
+    console.log("currentuser", auth.id);
+    console.log("currentuser", isCurrentUser);
+    console.log("photosUDP", photos);
+    const loading = Object.values(requesting).some(a => a === true);
+    if (loading) return <LoadingComponent />;
 
     return (
       <Grid>
         <UserDetailedHeader profile={profile} />
         <UserDetailedDescription profile={profile} />
-        <UserDetailedSidebar />
+        <UserDetailedSidebar isCurrentUser={isCurrentUser} />
+        {/* not getting photos, not displaying conditional */}
         {photos && photos.length > 0 && <UserDetailedPhotos photos={photos} />}
-        <UserDetailedEvents />
+        {/* <UserDetailedPhotos photos={photos} /> */}
+        <UserDetailedEvents
+          events={events}
+          eventsLoading={eventsLoading}
+          changeTab={this.changeTab}
+        />
       </Grid>
     );
   }
 }
 
-const mapStateToProps = state => ({
-  profile: state.firebase.profile,
-  auth: state.firebase.auth,
-  photos: state.firebase.ordered.photos
-});
+const mapStateToProps = (state, ownProps) => {
+  let userUid = null;
+  let profile = {};
+  console.log("ownProps", ownProps);
+  console.log("atate", state);
+
+  if (ownProps.match.params.id === state.firebase.auth.uid) {
+    console.log("true dat");
+    profile = state.firebase.profile;
+    userUid = state.firebase.auth.uid;
+  } else {
+    profile =
+      !isEmpty(state.firestore.ordered.profile) && state.firestore.ordered.profile[0];
+    userUid = ownProps.match.params.id;
+  }
+
+  return {
+    profile,
+    userUid,
+    events: state.events,
+    eventsLoading: state.asyncP.loading,
+    auth: state.firebase.auth,
+    photos: state.firestore.ordered.photos, //firestore
+    requesting: state.firestore.status.requesting
+  };
+};
+
+const mapDispatchToProps = {
+  getUserEvents: getUserEvents
+};
 
 export default compose(
-  connect(mapStateToProps),
-  firestoreConnect(auth => query(auth))
+  connect(mapStateToProps, mapDispatchToProps),
+  firestoreConnect((auth, userUid) => userDetailedQuery(auth, userUid))
 )(UserDetailedPage);

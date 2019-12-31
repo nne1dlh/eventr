@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Fragment } from "react";
 import { connect } from "react-redux";
-import { Image, Segment, Header, Divider, Grid, Button, Card } from "semantic-ui-react";
+import { Segment, Header, Divider, Grid, Button } from "semantic-ui-react";
 import DropzoneInput from "./DropzoneInput";
 import CropperInput from "./CropperInput";
 import { uploadProfImage, delPhoto, setMainPhoto } from "../../userActions";

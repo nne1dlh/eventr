@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 const SignedInMenu = ({ signOut, profilefromNavBar, auth }) => {
   //const {currentUser} = props;
-  console.group("SIMenuProfileFromNavBar", profilefromNavBar);
+  //console.log("SIMenuProfileFromNavBar", profilefromNavBar);
   return (
     <Menu.Item position="right">
       <Image

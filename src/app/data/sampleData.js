@@ -12,7 +12,7 @@ const sampleData = [
       lat: 40.7484405,
       lng: -73.98566440000002
     },
-    hoste: "Bob",
+    host: "Bob",
     hostPhotoURL: "https://randomuser.me/api/portraits/men/20.jpg",
     attendees: [
       {

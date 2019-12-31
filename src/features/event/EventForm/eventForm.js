@@ -10,13 +10,13 @@ import {
   hasLengthGreaterThan
 } from "revalidate";
 import { Segment, Form, Button, Grid, Header } from "semantic-ui-react";
-import { createEvent, updateEvent } from "../eventActions";
-import cuid from "cuid";
+import { createEvent, updateEvent, cancelToggle } from "../eventActions";
 import TextInput from "../../../app/common/form/TextInput";
 import TextArea from "../../../app/common/form/TextArea";
 import SelectInput from "../../../app/common/form/SelectInput";
 import DateInput from "../../../app/common/form/DateInput";
 import PlaceInput from "../../../app/common/form/PlaceInput";
+import { withFirestore } from "react-redux-firebase";
 
 const category = [
   { key: "drinks", text: "Drinks", value: "drinks" },
@@ -31,9 +31,18 @@ class EventForm extends Component {
   constructor(props) {
     super();
     this.state = { ...props.event, cityLatLng: {}, venueLatLng: {} };
-
     //this.pissFormSubmit = this.pissFormSubmit.bind(this);
     //this.handleInputChange = this.handleInputChange.bind(this);
+  }
+
+  async componentDidMount() {
+    const { firestore, match } = this.props;
+    await firestore.setListener(`events/${match.params.id}`);
+  }
+
+  async componentWillUnmount() {
+    const { firestore, match } = this.props;
+    await firestore.unsetListener(`events/${match.params.id}`);
   }
 
   pissFormSubmit = async values => {
@@ -41,6 +50,9 @@ class EventForm extends Component {
     //console.log("vals", values);
     try {
       if (this.props.initialValues.id) {
+        if (Object.keys(values.venueLatLng).length === 0) {
+          values.venueLatLng = this.props.event.venueLatLng;
+        }
         //existing events have "id" so this is update
         this.props.updateEvent(values);
         this.props.history.push(`/events/${this.props.initialValues.id}`);
@@ -48,9 +60,8 @@ class EventForm extends Component {
         console.log("formSubmit", this.state); //new created events dont have "id"
         let createdEvent = await this.props.createEvent(values);
         console.log("New Event", createdEvent);
-        {
-          createdEvent && this.props.history.push(`/events/${createdEvent.id}`);
-        }
+
+        createdEvent && this.props.history.push(`/events/${createdEvent.id}`);
       }
     } catch (err) {
       console.log("piss form erro", err);
@@ -84,7 +95,15 @@ class EventForm extends Component {
   };
 
   render() {
-    const { history, initialValues, invalid, submitting, pristine } = this.props;
+    const {
+      history,
+      initialValues,
+      invalid,
+      submitting,
+      pristine,
+      event,
+      cancelToggle
+    } = this.props;
     return (
       <Grid>
         <Grid.Column width={10}>
@@ -146,6 +165,13 @@ class EventForm extends Component {
               >
                 Cancel
               </Button>
+              <Button
+                type="button"
+                color={event.cancelled ? "green" : "red"}
+                floated="right"
+                content={event.cancelled ? "Reactivate event" : "Cancel Event"}
+                onClick={() => cancelToggle(!event.cancelled, event.id)}
+              ></Button>
             </Form>
           </Segment>
         </Grid.Column>
@@ -156,34 +182,37 @@ class EventForm extends Component {
 
 const mapStateToProps = (state, ownProps) => {
   //ownProps is from react-router
-  console.log("own", ownProps);
+  //console.log("own", ownProps);
   const eventId = ownProps.match.params.id;
 
   let event = {};
-  if (eventId && state.events.length > 0) {
-    event = state.events.filter(e => e.id === eventId)[0]; //will overwrite empty event obj
+  if (state.firestore.ordered.events && state.firestore.ordered.events.length > 0) {
+    event = state.firestore.ordered.events.filter(e => e.id === eventId)[0] || {};
   }
-  return { initialValues: event };
+  return { initialValues: event, event };
 };
 
 const validate = combineValidators({
-  title: isRequired({ message: "Title required dinkhead" }),
-  category: isRequired({ message: "Category required bitch" }),
+  title: isRequired({ message: "Title required head" }),
+  category: isRequired({ message: "Category required plesae" }),
   desc: composeValidators(
-    isRequired({ message: "Enter a description dinkface" }),
+    isRequired({ message: "Enter a description face" }),
     hasLengthGreaterThan(4)({ message: "desc has to be at least 5 chars" })
   )(),
   city: isRequired("city"),
-  venue: isRequired("fuckyou"),
+  venue: isRequired("heyyou"),
   date: isRequired("date required")
 });
 
 const mapDispatchToProps = {
   createEvent,
-  updateEvent
+  updateEvent,
+  cancelToggle
 };
 //higher order components
-export default connect(
-  mapStateToProps, //passing props to reduxForm
-  mapDispatchToProps
-)(reduxForm({ form: "eventForm", validate })(EventForm));
+export default withFirestore(
+  connect(
+    mapStateToProps, //passing props to reduxForm
+    mapDispatchToProps
+  )(reduxForm({ form: "eventForm", validate, enableReinitialize: true })(EventForm))
+);

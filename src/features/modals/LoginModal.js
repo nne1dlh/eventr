@@ -9,7 +9,7 @@ class LoginModal extends Component {
   render() {
     return (
       <Modal size="mini" open={true} onClose={this.props.closeModal}>
-        <Modal.Header>Login to FuckYou !</Modal.Header>
+        <Modal.Header>Login to Hey You !</Modal.Header>
         <Modal.Content>
           <Modal.Description>
             <LoginForm />

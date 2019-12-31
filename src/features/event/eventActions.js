@@ -1,12 +1,12 @@
-import { UPDATE_EVENT, DELETE_EVENT, FETCH_EVENT } from "./eventConstants";
+import { toastr } from "react-redux-toastr";
+import { createNewEvent } from "../../app/common/util/helpers";
+import firebase from "../../app/config/firebase";
+import { FETCH_EVENT } from "./eventConstants";
 import {
   asyncActionStart,
   asyncActionFinish,
   asyncActionError
 } from "../async/asyncActions";
-import { fetchSampleData } from "../../app/data/mockApi";
-import { toastr } from "react-redux-toastr";
-import { createNewEvent } from "../../app/common/util/helpers";
 
 export const createEvent = event => {
   //async returns promise
@@ -23,7 +23,7 @@ export const createEvent = event => {
         //creatdEvent ID returned by firestore
         eventId: createdEvent.id,
         userUid: user.uid,
-        eventDate: event.date, //from form
+        eventDate: event.eventDate, //from form EVENTDATE !!!
         host: true
       });
       toastr.success("Success !!", "Event has been created");
@@ -35,40 +35,96 @@ export const createEvent = event => {
 };
 
 export const updateEvent = evt => {
-  return async dispatch => {
+  return async (dispatch, getState, { getFirestore }) => {
+    const firestore = getFirestore();
     try {
-      dispatch({
-        type: UPDATE_EVENT,
-        payload: {
-          evt //sent to reducer
-        }
-      });
+      await firestore.update(`events/${evt.id}`, evt);
       toastr.success("Success Dude !!", "Evt has been updated");
     } catch (error) {
-      toastr.error("Oppsie", "Sumptin went weally wong with update evt");
+      toastr.error("Oppsie", "Sumptin went really wrong with update evt");
     }
   };
 };
 
-export const deleteEvent = eventId => {
-  return {
-    type: DELETE_EVENT,
-    payload: {
-      eventId //sent to reducer
-    }
-  };
+export const cancelToggle = (cancelled, eventId) => async (
+  dispatch,
+  getState,
+  { getFirestore }
+) => {
+  const firestore = getFirestore();
+  const message = cancelled
+    ? "Are you sure u wan tot cancel ?"
+    : "Are you sure you want to reactivate event ?";
+  try {
+    toastr.confirm(message, {
+      onOk: async () =>
+        await firestore.update(`events/${eventId}`, {
+          cancelled: cancelled
+        })
+    });
+  } catch (err) {
+    console.log("Cancel", err);
+  }
 };
 
-export const loadEvents = () => {
-  return async dispatch => {
-    try {
-      dispatch(asyncActionStart());
-      const events = await fetchSampleData();
-      dispatch({ type: FETCH_EVENT, payload: { events } });
+export const getEventsForDashboard = lastEvent => async (dispatch, getState) => {
+  const firestore = firebase.firestore();
+  const eventsRef = firestore.collection("events"); // DATE !!!!
+
+  try {
+    dispatch(asyncActionStart());
+    let startAfter =
+      lastEvent &&
+      (await firestore
+        .collection("events")
+        .doc(lastEvent.id)
+        .get());
+    let query;
+
+    lastEvent
+      ? (query = eventsRef
+          //.where("eventDate", ">=", today)
+          .orderBy("eventDate")
+          .startAfter(startAfter)
+          .limit(2))
+      : (query = eventsRef //initial load
+          //.where("eventDate", ">=", today)
+          .orderBy("eventDate")
+          .limit(2));
+
+    let querySnap = await query.get();
+
+    if (querySnap.docs.length === 0) {
       dispatch(asyncActionFinish());
-    } catch (error) {
-      console.log(error);
-      dispatch(asyncActionError());
+      return querySnap;
     }
-  };
+    console.log("querySS", querySnap);
+    let events = [];
+
+    for (let i = 0; i < querySnap.docs.length; i++) {
+      let evt = { ...querySnap.docs[i].data(), id: querySnap.docs[i].id };
+      events.push(evt);
+    }
+    console.log("events", events);
+    dispatch({ type: FETCH_EVENT, payload: { events } }); //passing payload into reducer
+    dispatch(asyncActionFinish());
+    return querySnap;
+  } catch (err) {
+    console.log(err);
+    dispatch(asyncActionError());
+  }
+};
+
+export const addEventComment = (eventId, comment) => async (
+  dispatch,
+  getState,
+  { getFirebase }
+) => {
+  const firebase = getFirebase();
+  try {
+    await firebase.push(`event_chat/${eventId}`, comment);
+  } catch (err) {
+    console.log(err);
+    toastr.error("Crap", "Problem adding comment");
+  }
 };

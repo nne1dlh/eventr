@@ -1,3 +1,9 @@
+export const objectToArray = obj => {
+  if (obj) {
+    return Object.entries(obj).map(e => Object.assign({}, e[1], { id: e[0] }));
+  }
+};
+
 export const createNewEvent = (user, photoURL, event) => {
   console.log("event form fields", event);
   return {
