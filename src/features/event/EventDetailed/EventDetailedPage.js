@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { Grid } from "semantic-ui-react";
 import EventDetailedHeader from "./EventDetailedHeader";
 import { withFirestore, firebaseConnect } from "react-redux-firebase";
-import { compose } from "redux";
+//import { compose } from "redux";
 import { EventDetailedInfo } from "./EventDetailedInfo";
 import EventDetailedChat from "./EventDetailedChat";
 import EventDetailedSidebar from "./EventDetailedSidebar";
@@ -51,8 +51,7 @@ class EventDetailedPage extends Component {
 
 const mapDispatchToProps = {
   goingToEvent,
-  cancelGoingToEvent,
-  addEventComment
+  cancelGoingToEvent
 };
 
 const mapStateToProps = (state, ownProps) => {
@@ -69,12 +68,12 @@ const mapStateToProps = (state, ownProps) => {
   return { event, auth: state.firebase.auth };
 };
 
-export default compose(
-  withFirestore,
-  (connect(mapStateToProps, mapDispatchToProps),
-  firebaseConnect(props => [`event_chat/${props.match.params.id}`]))
-)(EventDetailedPage);
+// export default compose(
+//   withFirestore,
+//   (connect(mapStateToProps, mapDispatchToProps),
+//   firebaseConnect(props => [`event_chat/${props.match.params.id}`]))
+// )(EventDetailedPage);
 
-// export default withFirestore(
-//   connect(mapStateToProps, mapDispatchToProps)(EventDetailedPage)
-// );
+export default withFirestore(
+  connect(mapStateToProps, mapDispatchToProps)(EventDetailedPage)
+);
