@@ -35,12 +35,40 @@ export const createEvent = event => {
 };
 
 export const updateEvent = evt => {
-  return async (dispatch, getState, { getFirestore }) => {
-    const firestore = getFirestore();
+  return async (dispatch, getState) => {
+    const firestore = firebase.firestore();
     try {
-      await firestore.update(`events/${evt.id}`, evt);
+      dispatch(asyncActionStart());
+      let eventDocRef = firestore.collection("events").doc(evt.id);
+      let dateEqual = getState().firestore.ordered.events[0].eventDate.isEqual(
+        evt.eventDate
+      );
+
+      if (!dateEqual) {
+        let batch = firestore.batch();
+        batch.update(eventDocRef, evt);
+
+        let eventAttendeeRef = firestore.collection("event_attendee");
+        let eventAttendeeQuery = await eventAttendeeRef.where("eventId", "==", evt.id);
+        let eventAttendeeQuerySnap = await eventAttendeeQuery.get();
+
+        for (let i = 0; i < eventAttendeeQuerySnap.docs.length; i++) {
+          let eventAttendeeDocRef = await firestore
+            .collection("event_attendee")
+            .doc(eventAttendeeQuerySnap.docs[i].id);
+
+          batch.update(eventAttendeeDocRef, {
+            eventDate: evt.eventDate
+          });
+        }
+        await batch.commit();
+      } else {
+        await eventDocRef.update(evt);
+      }
+      dispatch(asyncActionFinish());
       toastr.success("Success Dude !!", "Evt has been updated");
     } catch (error) {
+      dispatch(asyncActionError());
       toastr.error("Oppsie", "Sumptin went really wrong with update evt");
     }
   };
@@ -70,6 +98,7 @@ export const cancelToggle = (cancelled, eventId) => async (
 export const getEventsForDashboard = lastEvent => async (dispatch, getState) => {
   const firestore = firebase.firestore();
   const eventsRef = firestore.collection("events"); // DATE !!!!
+  let today = new Date();
 
   try {
     dispatch(asyncActionStart());
@@ -83,12 +112,12 @@ export const getEventsForDashboard = lastEvent => async (dispatch, getState) => 
 
     lastEvent
       ? (query = eventsRef
-          //.where("eventDate", ">=", today)
+          .where("eventDate", ">=", today)
           .orderBy("eventDate")
           .startAfter(startAfter)
           .limit(2))
       : (query = eventsRef //initial load
-          //.where("eventDate", ">=", today)
+          .where("eventDate", ">=", today)
           .orderBy("eventDate")
           .limit(2));
 
@@ -115,14 +144,25 @@ export const getEventsForDashboard = lastEvent => async (dispatch, getState) => 
   }
 };
 
-export const addEventComment = (eventId, comment) => async (
+export const addEventComment = (eventId, values, parentId) => async (
   dispatch,
   getState,
   { getFirebase }
 ) => {
   const firebase = getFirebase();
+  const profile = getState().firebase.profile;
+  const user = firebase.auth().currentUser;
+  let newComment = {
+    parentId: parentId,
+    displayName: profile.displayName,
+    photoURL: profile.photoURL || "/assets/user.png",
+    uid: user.uid,
+    text: values.comment,
+    date: Date.now()
+  };
   try {
-    await firebase.push(`event_chat/${eventId}`, comment);
+    await firebase.push(`event_chat/${eventId}`, newComment);
+    console.log("success adding comment");
   } catch (err) {
     console.log(err);
     toastr.error("Crap", "Problem adding comment");

@@ -69,9 +69,18 @@ const PhotosPage = ({
       await setMainPhoto(pic);
     } catch (err) {
       console.log(err);
-      toastr.error("Ooops", err.message);
+      toastr.error("Ooops piss", err.message);
     }
   };
+
+  // const handleSetMainPhoto = pic => {
+  //   try {
+  //     setMainPhoto(pic);
+  //   } catch (err) {
+  //     console.log(err);
+  //     toastr.error("Ooops piss", err.message);
+  //   }
+  // };
 
   return (
     <Segment>
@@ -125,6 +134,7 @@ const PhotosPage = ({
         profile={profile}
         deletePhoto={handleDeletePhoto}
         setMainPhoto={handleSetMainPhoto}
+        loading={loading}
       />
     </Segment>
   );

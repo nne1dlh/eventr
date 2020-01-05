@@ -54,7 +54,7 @@ class EventForm extends Component {
           values.venueLatLng = this.props.event.venueLatLng;
         }
         //existing events have "id" so this is update
-        this.props.updateEvent(values);
+        await this.props.updateEvent(values);
         this.props.history.push(`/events/${this.props.initialValues.id}`);
       } else {
         console.log("formSubmit", this.state); //new created events dont have "id"
@@ -102,7 +102,8 @@ class EventForm extends Component {
       submitting,
       pristine,
       event,
-      cancelToggle
+      cancelToggle,
+      loading
     } = this.props;
     return (
       <Grid>
@@ -152,7 +153,12 @@ class EventForm extends Component {
                 timeFormat="HH:mm"
               />
 
-              <Button disabled={invalid || submitting || pristine} positive type="submit">
+              <Button
+                disabled={invalid || submitting || pristine}
+                positive
+                type="submit"
+                loading={loading}
+              >
                 Submit
               </Button>
               <Button
@@ -162,6 +168,7 @@ class EventForm extends Component {
                     : () => history.push("/events")
                 }
                 type="button"
+                disabled={loading}
               >
                 Cancel
               </Button>
@@ -189,7 +196,7 @@ const mapStateToProps = (state, ownProps) => {
   if (state.firestore.ordered.events && state.firestore.ordered.events.length > 0) {
     event = state.firestore.ordered.events.filter(e => e.id === eventId)[0] || {};
   }
-  return { initialValues: event, event };
+  return { initialValues: event, event, loading: state.asyncP.loading };
 };
 
 const validate = combineValidators({

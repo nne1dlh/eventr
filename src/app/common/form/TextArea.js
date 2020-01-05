@@ -3,7 +3,7 @@ import { Form, Label } from "semantic-ui-react";
 
 const TextArea = props => {
   const { input, rows, type, placeholder, meta } = props;
-  console.log(input);
+  //console.log(input);
   return (
     <Form.Field error={meta.touched && !!meta.error}>
       <textarea {...input} placeholder={placeholder} type={type} rows={rows}></textarea>

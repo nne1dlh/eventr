@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, Grid, Header, Image, Menu, Segment, Tab } from "semantic-ui-react";
 import { Link } from "react-router-dom";
-import format from "date-fns/format";
+import { format } from "date-fns";
 
 const panes = [
   { menuItem: "All Events,", pane: { key: "allEvents" } },
@@ -29,10 +29,17 @@ const UserDetailedEvents = ({ events, eventsLoading, changeTab }) => {
                 <Card.Content>
                   <Card.Header textAlign="center">{e.title}</Card.Header>
                   <Card.Meta textAlign="center">
-                    <div>
-                      {format(e.eventDate && e.eventDate.toDate(), "dd LLL yyyy")}
-                    </div>
-                    <div>{format(e.eventDate && e.eventDate.toDate(), "h:mm a")}</div>
+                    {e.eventDate && (
+                      <div>
+                        {format(e.eventDate.toDate(), "EEEE do LLL")} at{" "}
+                        {format(e.eventDate.toDate(), "h:mm a")}
+                      </div>
+                    )}
+
+                    {/* <div>{format(e.eventDate && e.eventDate.toDate(), "h:mm a")}</div> */}
+
+                    {/* {format(event.eventDate.toDate(), "EEEE do LLL")} at{" "}
+                {format(event.eventDate.toDate(), "h:mm a")} */}
                   </Card.Meta>
                 </Card.Content>
               </Card>
