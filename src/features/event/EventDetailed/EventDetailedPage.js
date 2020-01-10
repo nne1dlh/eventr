@@ -10,6 +10,7 @@ import EventDetailedSidebar from "./EventDetailedSidebar";
 import { objectToArray, createDataTree } from "../../../app/common/util/helpers";
 import { goingToEvent, cancelGoingToEvent } from "../../user/userActions";
 import { addEventComment } from "../eventActions";
+import { openModal } from "../../modals/modalActions";
 
 class EventDetailedPage extends Component {
   async componentDidMount() {
@@ -30,13 +31,15 @@ class EventDetailedPage extends Component {
       cancelGoingToEvent,
       addEventComment,
       eventChat,
-      loading
+      loading,
+      openModal
     } = this.props;
     //console.log("event", event);
     const attendees = event && event.attendees && objectToArray(event.attendees);
     const isHost = event.hostUid === auth.uid;
     const isGoing = attendees && attendees.some(a => a.id === auth.uid); //returs true as soon as it finds match
     const chatTree = !isEmpty(eventChat) && createDataTree(eventChat);
+    const authenticated = auth.isLoaded && !auth.isEmpty;
 
     return (
       <Grid>
@@ -48,13 +51,17 @@ class EventDetailedPage extends Component {
             goingToEvent={goingToEvent}
             cancelGoingToEvent={cancelGoingToEvent}
             loading={loading}
+            authenticated={authenticated}
+            openModal={openModal}
           />
           <EventDetailedInfo event={event} />
-          <EventDetailedChat
-            addEventComment={addEventComment}
-            eventId={event.id}
-            eventChat={chatTree}
-          />
+          {authenticated && (
+            <EventDetailedChat
+              addEventComment={addEventComment}
+              eventId={event.id}
+              eventChat={chatTree}
+            />
+          )}
         </Grid.Column>
         <Grid.Column width={6}>
           <EventDetailedSidebar attendees={attendees} />
@@ -67,7 +74,8 @@ class EventDetailedPage extends Component {
 const mapDispatchToProps = {
   goingToEvent,
   cancelGoingToEvent,
-  addEventComment
+  addEventComment,
+  openModal
 };
 
 const mapStateToProps = (state, ownProps) => {

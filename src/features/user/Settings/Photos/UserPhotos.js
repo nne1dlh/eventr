@@ -24,7 +24,9 @@ const UserPhotos = ({ photos, profile, deletePhoto, setMainPhoto, loading }) => 
               <Image src={p.url} />
               <div className="ui two buttons">
                 <Button
-                  onClick={() => setMainPhoto(p)}
+                  onClick={() => {
+                    return setMainPhoto(p);
+                  }}
                   basic
                   color="green"
                   loading={loading}

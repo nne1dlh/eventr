@@ -97,59 +97,70 @@ export const delPhoto = photo => async (
   }
 };
 
-export const setMainPhoto = photo => async (dispatch, getState) => {
-  const firestore = firebase.firestore();
-  const user = firebase.auth().currentUser;
-  const today = new Date();
-  let userDocRef = firestore.collection("users").doc(user.uid);
-  let eventAttendeeRef = firestore.collection("event_attendee");
+export const setMainPhoto = photo => async (dispatch, getState, { getFirebase }) => {
+  const firebase = getFirebase();
   try {
-    dispatch(asyncActionStart());
-    let batch = firestore.batch();
-
-    batch.update(userDocRef, {
+    return await firebase.updateProfile({
       photoURL: photo.url
     });
-
-    let eventQuery = await eventAttendeeRef
-      .where("userUid", "==", user.uid)
-      .where("eventDate", ">=", today);
-
-    let eventQuerySnap = await eventQuery.get();
-
-    for (let i = 0; i < eventQuerySnap.docs.length; i++) {
-      let eventDocRef = await firestore
-        .collection("events")
-        .doc(eventQuerySnap.docs[i].data().eventId);
-
-      let event = await eventDocRef.get();
-      console.log("batchm event", event.data().hostUid);
-
-      if (event.data().hostUid === user.uid) {
-        //event.data() undefined
-        batch.update(eventDocRef, {
-          hostPhotoURL: photo.url,
-          [`attendees.${user.uid}.photoURL`]: photo.url
-        });
-      } else {
-        batch.update(eventDocRef, {
-          [`attendees.${user.uid}.photoURL`]: photo.url
-        });
-      }
-    }
-    console.log("bitch", batch);
-    await batch.commit();
-    dispatch(asyncActionFinish());
-
-    // return await firebase.updateProfile({
-    //   photoURL: photo.url
-    // });
   } catch (err) {
-    console.log("pisserror", err);
-    dispatch(asyncActionError());
-    throw new Error("Problem setting main photo");
+    console.log(err);
+    throw new Error("Problem setting main pic");
   }
 };
+
+// export const setMainPhoto = photo => async (dispatch, getState) => {
+//   const firestore = firebase.firestore();
+//   const user = firebase.auth().currentUser;
+//   const today = new Date();
+//   let userDocRef = firestore.collection("users").doc(user.uid);
+//   let eventAttendeeRef = firestore.collection("event_attendee");
+//   try {
+//     dispatch(asyncActionStart());
+//     let batch = firestore.batch();
+
+//     //console.log("userDocRef", userDocRef);
+
+//     batch.update(userDocRef, {
+//       photoURL: photo.url
+//     });
+
+//     let eventQuery = await eventAttendeeRef
+//       .where("userUid", "==", user.uid)
+//       .where("eventDate", ">=", today);
+
+//     let eventQuerySnap = await eventQuery.get();
+//     console.log("queeryLength", eventQuerySnap.docs.length);
+
+//     for (let i = 0; i < eventQuerySnap.docs.length; i++) {
+//       let eventDocRef = await firestore
+//         .collection("events")
+//         .doc(eventQuerySnap.docs[i].data().eventId);
+//       let event = await eventDocRef.get();
+//       console.log("begining of if structure", event.data().hostUid);
+//       if (event.data().hostUid === user.uid) {
+//         //event.data() undefined
+//         console.log("user is host");
+//         batch.update(eventDocRef, {
+//           hostPhotoURL: photo.url,
+//           [`attendees.${user.uid}.photoURL`]: photo.url
+//         });
+//       } else {
+//         batch.update(eventDocRef, {
+//           [`attendees.${user.uid}.photoURL`]: photo.url
+//         });
+//         console.log("useris just attendee");
+//       }
+//     }
+//     console.log("bite", batch);
+//     await batch.commit();
+//     dispatch(asyncActionFinish());
+//   } catch (err) {
+//     console.log("pierror", err);
+//     dispatch(asyncActionError());
+//     throw new Error("Problem setting main photo");
+//   }
+// };
 
 export const goingToEvent = e => async (dispatch, getState) => {
   dispatch(asyncActionStart());
@@ -202,7 +213,7 @@ export const cancelGoingToEvent = e => async (
   const firebase = getFirebase();
   const user = firebase.auth().currentUser;
   try {
-    await firebase.update(`events/${e.id}`, {
+    await firestore.update(`events/${e.id}`, {
       [`attendees.${user.uid}`]: firestore.FieldValue.delete()
     });
     await firestore.delete(`event_attendee/${e.id}_${user.uid}`);
