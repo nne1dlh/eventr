@@ -7,7 +7,7 @@ import { connect } from "react-redux";
 import SocialLogin from "../socialLogin/SocialLogin";
 
 const LoginForm = props => {
-  const { login, socialLogin, handleSubmit, error } = props; //handleSubmit comes from redux forms
+  const { login, socialLogin, handleSubmit, error, submitting } = props; //handleSubmit comes from redux forms
   return (
     <Form size="large" onSubmit={handleSubmit(login)} autoComplete="on">
       <Segment>
@@ -28,7 +28,7 @@ const LoginForm = props => {
             {error}
           </Label>
         )}
-        <Button fluid size="large" color="teal">
+        <Button loading={submitting} fluid size="large" color="teal">
           Login
         </Button>
         <Divider horizontal>Or</Divider>

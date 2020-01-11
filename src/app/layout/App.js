@@ -12,6 +12,7 @@ import EventForm from "../../features/event/EventForm/eventForm";
 import Playground from "../../features/playground/PlaygroundComponent";
 import ModalManager from "../../features/modals/ModalManager";
 import { UserIsAuthenticated } from "../../features/auth/authWrapper";
+import NotFound from "./NotFound";
 
 class App extends Component {
   render() {
@@ -45,6 +46,7 @@ class App extends Component {
                     component={UserIsAuthenticated(EventForm)}
                   />
                   <Route path="/playground" component={Playground} />
+                  <Route component={NotFound} />
                 </Switch>
               </Container>
             </Fragment>

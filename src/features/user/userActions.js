@@ -6,7 +6,7 @@ import {
 } from "../async/asyncActions";
 import cuid from "cuid";
 import firebase from "../../app/config/firebase";
-import { FETCH_EVENT } from "../event/eventConstants";
+import { FETCH_EVENT, FETCH_USER_EVENT } from "../event/eventConstants";
 
 export const updateProfile = (
   user //user from form
@@ -266,12 +266,57 @@ export const getUserEvents = (userUid, activeTab) => async (dispatch, getState) 
       events.push({ ...evt.data(), id: evt.id });
     }
 
-    dispatch({ type: FETCH_EVENT, payload: { events } });
+    dispatch({ type: FETCH_USER_EVENT, payload: { events } });
 
     console.log("qsnapper", querySnap);
     dispatch(asyncActionFinish());
   } catch (err) {
     console.log(err);
     dispatch(asyncActionError());
+  }
+};
+
+export const followUser = followedUser => async (
+  dispatch,
+  getState,
+  { getFirestore }
+) => {
+  const firestore = getFirestore();
+  const user = firestore.auth().currentUser;
+  console.log("usr", user);
+  const following = {
+    photoURL: followedUser.photoURL || "/assets/user.png",
+    city: followedUser.city || "unknown",
+    displayName: followedUser.displayName
+  };
+  try {
+    await firestore.set(
+      {
+        collection: "users",
+        doc: user.uid,
+        subcollections: [{ collection: "following", doc: followedUser.id }]
+      },
+      following
+    );
+  } catch (err) {
+    console.log("followUser errrrrr", err);
+  }
+};
+
+export const unfollowUser = userToUnfollow => async (
+  dispatch,
+  getState,
+  { getFirestore }
+) => {
+  const firestore = getFirestore();
+  const user = firestore.auth().currentUser;
+  try {
+    await firestore.delete({
+      collection: "users",
+      doc: user.uid,
+      subcollections: [{ collection: "following", doc: userToUnfollow.id }]
+    });
+  } catch (err) {
+    console.log(err);
   }
 };

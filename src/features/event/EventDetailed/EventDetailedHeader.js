@@ -1,5 +1,5 @@
 import React, { Fragment } from "react";
-import { Segment, Image, Item, Header, Button } from "semantic-ui-react";
+import { Segment, Image, Item, Header, Button, Label } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 
@@ -60,19 +60,22 @@ export const EventDetailedHeader = ({
       </Segment>
 
       <Segment attached="bottom" clearing>
+        {event.cancelled && (
+          <Label size="large" color="red" content="Event has been cancelled" />
+        )}
         {!isHost && (
-          <div>
-            {isGoing && (
+          <Fragment>
+            {isGoing && !event.cancelled && (
               <Button onClick={() => cancelGoingToEvent(event)}>Cancel My Place</Button>
             )}
 
-            {!isGoing && authenticated && (
+            {!isGoing && authenticated && !event.cancelled && (
               <Button color="teal" loading={loading} onClick={() => goingToEvent(event)}>
                 JOIN THIS EVENT
               </Button>
             )}
 
-            {!authenticated && (
+            {!authenticated && !event.cancelled && (
               <Button
                 color="teal"
                 loading={loading}
@@ -81,7 +84,7 @@ export const EventDetailedHeader = ({
                 JOIN THIS EVENT
               </Button>
             )}
-          </div>
+          </Fragment>
         )}
 
         {isHost && (

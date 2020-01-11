@@ -10,16 +10,16 @@ import UserDetailedPhotos from "./UserDetailedPhotos";
 import UserDetailedSidebar from "./UserDetailedSidebar";
 import { userDetailedQuery } from "../../user/userQueries";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
-import { getUserEvents } from "../userActions";
+import { getUserEvents, followUser, unfollowUser } from "../userActions";
 
 class UserDetailedPage extends Component {
   async componentDidMount() {
     let events = await this.props.getUserEvents(this.props.userUid);
-    console.log("events", events);
+    //console.log("events", events);
   }
 
   changeTab = (e, data) => {
-    console.log("ChangeTabby", data);
+    //console.log("ChangeTabby", data);
     this.props.getUserEvents(this.props.userUid, data.activeIndex);
   };
 
@@ -31,12 +31,17 @@ class UserDetailedPage extends Component {
       match,
       requesting,
       events,
-      eventsLoading
+      eventsLoading,
+      followUser,
+      unfollowUser,
+      following
     } = this.props;
     const isCurrentUser = auth.uid === match.params.id;
-    console.log("currentuser", auth.id);
-    console.log("currentuser", isCurrentUser);
-    console.log("photosUDP", photos);
+    const isFollowing = !isEmpty(following);
+
+    //console.log("currentuser", auth.id);
+    //console.log("currentuser", isCurrentUser);
+    //console.log("photosUDP", photos);
     const loading = Object.values(requesting).some(a => a === true);
     if (loading) return <LoadingComponent />;
 
@@ -44,7 +49,13 @@ class UserDetailedPage extends Component {
       <Grid>
         <UserDetailedHeader profile={profile} />
         <UserDetailedDescription profile={profile} />
-        <UserDetailedSidebar isCurrentUser={isCurrentUser} />
+        <UserDetailedSidebar
+          profile={profile}
+          isCurrentUser={isCurrentUser}
+          followUser={followUser}
+          isFollowing={isFollowing}
+          unfollowUser={unfollowUser}
+        />
         {/* not getting photos, not displaying conditional */}
         {photos && photos.length > 0 && <UserDetailedPhotos photos={photos} />}
         {/* <UserDetailedPhotos photos={photos} /> */}
@@ -61,11 +72,11 @@ class UserDetailedPage extends Component {
 const mapStateToProps = (state, ownProps) => {
   let userUid = null;
   let profile = {};
-  console.log("ownProps", ownProps);
-  console.log("atate", state);
+  //console.log("ownProps", ownProps);
+  //console.log("atate", state);
 
   if (ownProps.match.params.id === state.firebase.auth.uid) {
-    console.log("true dat");
+    //console.log("true dat");
     profile = state.firebase.profile;
     userUid = state.firebase.auth.uid;
   } else {
@@ -77,19 +88,22 @@ const mapStateToProps = (state, ownProps) => {
   return {
     profile,
     userUid,
-    events: state.events,
+    events: state.events.userEvents,
     eventsLoading: state.asyncP.loading,
     auth: state.firebase.auth,
     photos: state.firestore.ordered.photos, //firestore
-    requesting: state.firestore.status.requesting
+    requesting: state.firestore.status.requesting,
+    following: state.firestore.ordered.following
   };
 };
 
 const mapDispatchToProps = {
-  getUserEvents: getUserEvents
+  getUserEvents: getUserEvents,
+  followUser: followUser,
+  unfollowUser: unfollowUser
 };
 
 export default compose(
   connect(mapStateToProps, mapDispatchToProps),
-  firestoreConnect((auth, userUid) => userDetailedQuery(auth, userUid))
+  firestoreConnect((auth, userUid, match) => userDetailedQuery(auth, userUid, match))
 )(UserDetailedPage);
